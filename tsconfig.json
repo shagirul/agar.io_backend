@@ -1,0 +1,30 @@
+// {
+//   "compilerOptions": {
+//     "target": "ES2020",//Specifies the target JavaScript version for the compiled output. 
+//     //ES2020 means the code will be transpiled to be compatible with ECMAScript 2020.
+//     "module": "NodeNext",// Defines the module system to use for the output files. NodeNext is a module system used in Node.js that supports both CommonJS and ES Modules. It helps in dealing with imports and exports in Node.js environments.
+//     "rootDir": "src",// Sets the root directory of the TypeScript source files. This tells the compiler where to look for input files, and it will maintain the directory structure in the output directory.
+//     "moduleResolution": "NodeNext",//Determines how module imports are resolved. NodeNext uses the Node.js resolution strategy, which supports both .js and .ts file extensions and is compatible with the Node.js ecosystem.
+//     "outDir": "dist",// Specifies the output directory for the compiled JavaScript files. After compilation, TypeScript will place the resulting files into this directory.
+//     "strict": true,//Enables all strict type-checking options. This includes checks for stricter type rules and helps in catching potential errors early. It's a good practice to enable this for better type safety.
+//     "types": ["jest"]
+//   }
+// }
+{
+  "compilerOptions": {
+    "target": "ES2020", // Keep as is: suitable for modern JavaScript runtime.
+    "module": "NodeNext", // NodeNext for ESM compatibility.
+    "rootDir": "src", // Ensure source files are organized.
+    "moduleResolution": "NodeNext", // Matches the module system.
+    "outDir": "dist", // Output directory for compiled files.
+    "strict": true, // Enables strict type-checking.
+    "esModuleInterop": true, // Adds support for interoperation between CommonJS and ES Modules.
+    "allowSyntheticDefaultImports": true, // Supports importing CommonJS modules with default imports.
+    "types": ["jest", "node"], // Includes Jest and Node.js types for testing and runtime compatibility.
+    "resolveJsonModule": true, // Allows importing JSON modules.
+    "skipLibCheck": true, // Skips type-checking declaration files for faster builds.
+    "sourceMap": true // Generate source maps for easier debugging.
+  },
+  "include": ["src"], // Includes the `src` directory for compilation.
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/__tests__/**"] // Exclude unnecessary files from compilation.
+}
