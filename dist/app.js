@@ -3,7 +3,8 @@ import { config } from "dotenv";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import GameManager from "./controller/gamemanager.js";
+import { GameManager } from "./core/GameManager.js";
+import { Player } from "./core/player.js";
 // Uncomment if you want request logging
 // import morgan from "morgan";
 // Load environment variables from .env file
@@ -32,48 +33,30 @@ const io = new Server(server, {
         credentials: true, // Allow cookies if necessary
     },
 });
-const gameManager = new GameManager();
+const gameManager = new GameManager({ width: 1000, height: 1000 });
+app.use(express.static("public"));
 // Initialize the game
-gameManager.initializeGame();
+// Handle new client connection
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
-    // Create player when a new user connects
-    socket.on(SocketEvent.CreatePlayer, (name) => {
-        const playerId = socket.id; // Use socket.id as the player ID
-        const player = gameManager.addPlayer(playerId, name);
-        // Emit the player data to the specific player (the one who connected)
-        socket.emit(SocketEvent.PlayerCreated, player.getPlayerData());
-        // Emit the current game state to the new player
-        socket.emit(SocketEvent.GameState, gameManager.getGameState());
-        // Broadcast the new game state to all players except the one who just joined
-        socket.broadcast.emit(SocketEvent.GameState, gameManager.getGameState());
+    console.log(`New player connected: ${socket.id}`);
+    const player = new Player(socket.id, `Player-${socket.id}`);
+    const roomId = gameManager.addPlayerToRoom(player);
+    socket.join(roomId);
+    // Send initial state to the player
+    socket.emit("update", gameManager.getRooms().get(roomId)?.gameLoop?.getDeltaUpdates());
+    socket.on("move", (direction) => {
+        gameManager.setPlayerDirection(socket.id, direction);
     });
-    // Handle player movement updates
-    socket.on(SocketEvent.UpdatePlayerPosition, (x, y) => {
-        gameManager.updatePlayerPosition(socket.id, x, y);
-        // Broadcast updated game state to all clients
-        io.emit(SocketEvent.GameState, gameManager.getGameState());
+    socket.on("disconnect", () => {
+        console.log(`Player disconnected: ${socket.id}`);
+        gameManager.removePlayerFromRoom(socket.id);
     });
-    // Handle player disconnection
-    socket.on(SocketEvent.PlayerDisconnected, () => {
-        console.log("A user disconnected:", socket.id);
-        // Optionally, remove player from game state
-        gameManager.removePlayer(socket.id);
-        // Notify all other players about the disconnection
-        // socket.broadcast.emit(SocketEvent.PlayerDisconnected, socket.id);
-        io.emit(SocketEvent.GameState, gameManager.getGameState());
-    });
+    setInterval(() => {
+        gameManager.broadcastRoomStates(io);
+    }, 1000 / 60); // 60 FPS updates
 });
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.status(200).json({ status: "OK", timestamp: new Date() });
-});
-// Start the server
-server
-    .listen(PORT, () => {
-    console.log(`Server is working on port http://localhost:${PORT}`);
-})
-    .on("error", (err) => {
-    console.error(`Failed to start server: ${err.message}`);
+// Start the server on port 3000
+server.listen(3000, () => {
+    console.log("Server is running on http://localhost:3000");
 });
 //# sourceMappingURL=app.js.map
