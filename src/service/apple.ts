@@ -5,7 +5,7 @@ import Apple from "../model/apple.js";
 export default class AppleService {
   private apples: Apple[] = [];
   private height = Number(process.env.CANVASHEIGHT) || 1000;
-  private width = Number(process.env.CANVASWIDTH) || 1500;
+  private width = Number(process.env.CANVASWIDTH) || 1000;
 
   constructor(initialAppleCount: number = 5) {
     this.apples = this.generateInitialApples(initialAppleCount); // Now returns an Apple[] array

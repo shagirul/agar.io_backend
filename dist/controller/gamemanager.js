@@ -6,7 +6,7 @@ export default class GameManager {
         this.players = [];
         this.apples = [];
         this.height = Number(process.env.CANVASHEIGHT) || 1000;
-        this.width = Number(process.env.CANVASWIDTH) || 1500;
+        this.width = Number(process.env.CANVASWIDTH) || 1000;
         this.appleService = new AppleService();
         this.playerService = new PlayerService();
     }

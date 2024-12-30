@@ -9,7 +9,7 @@ export default class GameManager {
   private appleService: AppleService;
   private playerService: PlayerService;
   private height = Number(process.env.CANVASHEIGHT) || 1000;
-  private width = Number(process.env.CANVASWIDTH) || 1500;
+  private width = Number(process.env.CANVASWIDTH) || 1000;
 
   constructor() {
     this.appleService = new AppleService();

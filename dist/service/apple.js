@@ -4,7 +4,7 @@ export default class AppleService {
     constructor(initialAppleCount = 5) {
         this.apples = [];
         this.height = Number(process.env.CANVASHEIGHT) || 1000;
-        this.width = Number(process.env.CANVASWIDTH) || 1500;
+        this.width = Number(process.env.CANVASWIDTH) || 1000;
         this.apples = this.generateInitialApples(initialAppleCount); // Now returns an Apple[] array
     }
     // Create a new apple
