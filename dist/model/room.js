@@ -1,7 +1,8 @@
-import Player from "../model/player.js";
+import Player from "./player.js";
 import AppleService from "../service/apple.js";
 import PlayerService from "../service/player.js";
-export default class GameManager {
+import GameLoop from "./GameLoop.js";
+export default class Room {
     constructor() {
         this.players = [];
         this.apples = [];
@@ -9,10 +10,14 @@ export default class GameManager {
         this.width = Number(process.env.CANVASWIDTH) || 1000;
         this.appleService = new AppleService();
         this.playerService = new PlayerService();
+        this.gameLoop = new GameLoop(this.playerService);
     }
     // Initialize the game
     initializeGame() {
         this.apples = this.appleService.generateInitialApples(Number(process.env.MAXAPPLECOUNT));
+        // Initialize GameLoop here
+        this.gameLoop = new GameLoop(this.playerService);
+        this.gameLoop.startLoop(); // Start the game loop
     }
     addPlayer(id, name) {
         // Check if a player with this ID already exists
@@ -42,10 +47,13 @@ export default class GameManager {
         const player = this.playerService.getPlayerById(playerId);
         if (!player)
             return;
-        // Update the position of all cells owned by the player
+        // Set the new target direction for the player
+        player.setTarget(direction);
+        // Move the player (and cells) towards the target
+        player.move(deltaTime);
+        // Handle collision with apples
         player.getCells().forEach((cell) => {
-            cell.updatePosition(direction, deltaTime);
-            this.checkForAppleCollision(cell); // Reuse collision check method
+            this.checkForAppleCollision(cell);
         });
     }
     // Check for collision between player and apples
@@ -60,7 +68,8 @@ export default class GameManager {
     }
     // Get the game state (players and apples)
     getGameState() {
-        return { players: this.players, apples: this.apples };
+        const players = this.players.map((player) => player.toJSON());
+        return { players: players, apples: this.apples };
     }
     // Random color generator for player
     getRandomColor() {
@@ -68,4 +77,4 @@ export default class GameManager {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 }
-//# sourceMappingURL=gamemanager.js.map
+//# sourceMappingURL=room.js.map

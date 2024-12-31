@@ -1,20 +1,25 @@
+import { Vector2D } from "../utils/types.js";
 import Apple from "./apple.js";
+import { Cell } from "./cell.js";
 
 export default class Player {
   private id: string;
-  private x: number;
-  private y: number;
   private color: string;
-  private size: number;
   private name: string; // New name field
+  private splitCooldown: number;
+  private cells: Map<string, Cell>;
+  private target: Vector2D | null = null;
 
   public getId(): string {
     return this.id;
   }
 
-  public get playerSize(): number {
-    return this.size;
+  public setTarget(newTarget: Vector2D): void {
+    this.target = newTarget;
   }
+  // public get playerSize(): number {
+  //   return this.size;
+  // }
 
   // Getter for the name
   public get playerName(): string {
@@ -22,57 +27,71 @@ export default class Player {
   }
 
   // Public getter for accessing the position of the player
-  public get position(): { x: number; y: number } {
-    return { x: this.x, y: this.y };
-  }
+  // public get position(): { x: number; y: number } {
+  //   return { x: this.x, y: this.y };
+  // }
 
   // Constructor to initialize the player
-  constructor(
-    id: string,
-    name: string, // Accepting name
-    x: number,
-    y: number,
-    color: string,
-    size: number = 10
-  ) {
+  constructor(id: string, name: string, color: string) {
     this.id = id;
-    this.name = name; // Initialize name
-    this.x = x;
-    this.y = y;
+    this.name = name;
     this.color = color;
-    this.size = size; // Default size
+    this.splitCooldown = 0;
+    this.cells = new Map();
+    const randomPosition = {
+      x: Math.random() * Number(process.env.CANVASWIDTH || 1000),
+      y: Math.random() * Number(process.env.CANVASHEIGHT || 1000),
+    };
+    const cell = new Cell(`${id}-1`, randomPosition, 30, id);
+    this.addCell(cell);
   }
 
-  // Method to update player position
-  public updatePosition(x: number, y: number): void {
-    this.x = x;
-    this.y = y;
+  addCell(cell: Cell): void {
+    this.cells.set(cell.id, cell);
   }
 
-  // Method to increase the player's size based on the apple's size
-  public increaseSize(apple: Apple): void {
-    this.size += apple.appleSize * 0.5; // Increase player size based on apple size
+  removeCell(cellId: string): void {
+    this.cells.delete(cellId);
+  }
+  // Move the player (and its cells) towards the target
+  move(deltaTime: number): void {
+    if (this.target) {
+      // For each cell, update its position
+      this.cells.forEach((cell) => {
+        cell.updatePosition(this.target, deltaTime);
+      });
+    }
   }
 
-  // Method to check for collision with an apple
-  public isCollidingWithApple(apple: Apple): boolean {
-    const distance = Math.sqrt(
-      Math.pow(this.x - apple.position.x, 2) +
-        Math.pow(this.y - apple.position.y, 2)
-    );
-    const collisionThreshold = this.size + apple.appleSize; // Combine player size and apple size
-    return distance < collisionThreshold; // Check if distance is smaller than the sum of the radii
+  public getCells(): Cell[] {
+    return Array.from(this.cells.values());
   }
 
   // Method to retrieve player data
   public getPlayerData() {
     return {
       id: this.id,
-      name: this.name, // Include name in player data
-      x: this.x,
-      y: this.y,
+      name: this.name,
       color: this.color,
-      size: this.size, // Include size in player data
+      splitCooldown: this.splitCooldown,
+      cells: this.getCells().map((cell) => ({
+        id: cell.id,
+        position: cell.position,
+        size: cell.size,
+      })), // Return an array of plain objects representing the cells
+    };
+  }
+  public toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      color: this.color,
+      splitCooldown: this.splitCooldown,
+      cells: this.getCells().map((cell) => ({
+        id: cell.id,
+        position: cell.getPosition(), // Assuming Cell class has getPosition method
+        size: cell.size, // Assuming Cell class has size property
+      })), // Map the cells to a serializable format
     };
   }
 }

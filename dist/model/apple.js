@@ -1,21 +1,19 @@
 export default class Apple {
-    constructor(x, y, size) {
-        this.x = x;
-        this.y = y;
+    constructor(position, size) {
         this.size = size;
+        this.position = position;
     }
     // Getter for apple position
-    get position() {
-        return { x: this.x, y: this.y };
+    getPosition() {
+        return this.position;
     }
     // Getter for apple size
     get appleSize() {
         return this.size;
     }
     // Update apple's position
-    updatePosition(x, y) {
-        this.x = x;
-        this.y = y;
+    updatePosition(position) {
+        this.position = position;
     }
 }
 //# sourceMappingURL=apple.js.map
