@@ -17,6 +17,13 @@ export default class PlayerService {
             player.move(deltaTime);
         }
     }
+    // Method to update a player's position
+    shoot(id, deltaTime) {
+        const player = this.players.get(id);
+        if (player) {
+            player.shoot();
+        }
+    }
     // Method to get all players
     getAllPlayers() {
         return Array.from(this.players.values());

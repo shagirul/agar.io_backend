@@ -4,7 +4,8 @@ import Player from "./player.js";
 import AppleService from "../service/apple.js";
 import PlayerService from "../service/player.js";
 import { PlayerData, Vector2D } from "../utils/types.js";
-import GameLoop from "./GameLoop.js";
+
+const GAME_LOOP_INTERVAL = 16;
 
 export default class Room {
   private players: Player[] = [];
@@ -13,12 +14,15 @@ export default class Room {
   private playerService: PlayerService;
   private height = Number(process.env.CANVASHEIGHT) || 1000;
   private width = Number(process.env.CANVASWIDTH) || 1000;
-  private gameLoop: GameLoop;
+  // private gameLoop: GameLoop;
+  private lastTime: number;
 
   constructor() {
     this.appleService = new AppleService();
     this.playerService = new PlayerService();
-    this.gameLoop = new GameLoop(this.playerService);
+    // this.gameLoop = new GameLoop(this.playerService);
+    this.lastTime = Date.now();
+    this.startLoop();
   }
 
   // Initialize the game
@@ -26,9 +30,30 @@ export default class Room {
     this.apples = this.appleService.generateInitialApples(
       Number(process.env.MAXAPPLECOUNT)
     );
-    // Initialize GameLoop here
-    this.gameLoop = new GameLoop(this.playerService);
-    this.gameLoop.startLoop(); // Start the game loop
+  }
+
+  // This function will be called continuously at regular intervals
+  public startLoop() {
+    setInterval(() => {
+      this.update();
+    }, GAME_LOOP_INTERVAL);
+  }
+
+  // Game loop update method
+  private update() {
+    const deltaTime = (Date.now() - this.lastTime) / 1000; // Calculate time difference in seconds
+    this.lastTime = Date.now(); // Update the lastTime to the current time
+
+    // Update positions of all players in the room
+    this.playerService.getAllPlayers().forEach((player: Player) => {
+      // Move each cell of the player
+      player.move(deltaTime); // Assume player.move() uses deltaTime for smooth movement
+      player.getCells().forEach((cell) => {
+        this.checkForAppleCollision(cell);
+      });
+    });
+
+    // Broadcast the updated game state to all clients
   }
 
   public addPlayer(id: string, name: string): Player {
@@ -62,25 +87,20 @@ export default class Room {
     this.playerService.removePlayer(id);
   }
 
+  public attack(id: string): void {
+    console.log("player splitted", id);
+    // Remove the player from the players array
+
+    // Remove the player from PlayerService
+    this.playerService.shoot(id);
+  }
+
   // Update player position
-  public updatePlayerPosition(
-    playerId: string,
-    direction: Vector2D,
-    deltaTime: number
-  ): void {
+  public updatePlayerPosition(playerId: string, direction: Vector2D): void {
     const player = this.playerService.getPlayerById(playerId);
     if (!player) return;
 
-    // Set the new target direction for the player
     player.setTarget(direction);
-
-    // Move the player (and cells) towards the target
-    player.move(deltaTime);
-
-    // Handle collision with apples
-    player.getCells().forEach((cell) => {
-      this.checkForAppleCollision(cell);
-    });
   }
 
   // Check for collision between player and apples

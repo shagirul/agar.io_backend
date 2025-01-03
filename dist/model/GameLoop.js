@@ -13,7 +13,7 @@ class GameLoop {
     }
     // Game loop update method
     update() {
-        const deltaTime = 0.16; // Calculate time difference in seconds
+        const deltaTime = (Date.now() - this.lastTime) / 1000; // Calculate time difference in seconds
         this.lastTime = Date.now(); // Update the lastTime to the current time
         // Update positions of all players in the room
         this.player.getAllPlayers().forEach((player) => {

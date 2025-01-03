@@ -16,6 +16,7 @@ enum SocketEvent {
   Connection = "connection",
   PlayerCreated = "playerCreated",
   CreatePlayer = "createPlayer",
+  Attack = "attack",
   UpdatePlayerPosition = "updatePlayerPosition",
   GameState = "gameState",
   PlayerDisconnected = "playerDisconnected",
@@ -59,12 +60,20 @@ io.on("connection", (socket) => {
 
   // Handle player movement updates
   socket.on(SocketEvent.UpdatePlayerPosition, (direction: Vector2D) => {
-    RoomManger.updatePlayerPosition(socket.id, direction, 0.16);
+    RoomManger.updatePlayerPosition(socket.id, direction);
 
     // Broadcast updated game state to all clients
     io.emit(SocketEvent.GameState, RoomManger.getGameState());
   });
 
+  socket.on(SocketEvent.Attack, () => {
+    // Optionally, remove player from game state
+    RoomManger.attack(socket.id);
+
+    // Notify all other players about the disconnection
+    // socket.broadcast.emit(SocketEvent.PlayerDisconnected, socket.id);
+    io.emit(SocketEvent.GameState, RoomManger.getGameState());
+  });
   // Handle player disconnection
   socket.on(SocketEvent.PlayerDisconnected, () => {
     console.log("A user disconnected:", socket.id);

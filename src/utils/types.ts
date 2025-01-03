@@ -6,7 +6,6 @@ export interface PlayerData {
   id: string;
   name: string;
   color: string;
-  splitCooldown: number;
   cells: {
     id: string;
     position: {
