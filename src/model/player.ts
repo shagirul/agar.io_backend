@@ -67,40 +67,56 @@ export default class Player {
           const cellA = cellArray[i];
           const cellB = cellArray[j];
 
-          const dx = cellB.position.x - cellA.position.x;
-          const dy = cellB.position.y - cellA.position.y;
+          // Ensure cellA is always the larger one for comparison
+          let largerCell = cellA;
+          let smallerCell = cellB;
+          if (cellB.size > cellA.size) {
+            largerCell = cellB;
+            smallerCell = cellA;
+          }
+
+          const dx = smallerCell.position.x - largerCell.position.x;
+          const dy = smallerCell.position.y - largerCell.position.y;
           const distance = Math.sqrt(dx ** 2 + dy ** 2);
 
-          // Calculate the distance threshold (sum of radii of both cells)
-          const mergeDistance = (cellA.size + cellB.size) / 2;
+          // Calculate radii
+          const largerRadius = largerCell.size / 2;
+          const smallerRadius = smallerCell.size / 2;
 
-          // If cells can merge and are close enough, merge them
-          if (
-            distance < mergeDistance &&
-            cellA.canMerge() &&
-            cellB.canMerge()
-          ) {
-            // Merge cells if eligible
-            const newSize = Math.sqrt(cellA.size ** 2 + cellB.size ** 2); // Preserve area
-            cellA.updateSize(newSize);
-            cellA.lastMergeTime = Date.now(); // Update merge timestamp
+          // Dynamically calculate the buffer based on the radii of both cells
+          const dynamicBuffer = Math.max(10, largerRadius + smallerRadius); // Dynamic buffer grows with size
 
-            this.cells.delete(cellB.id); // Remove merged cell
-          } else if (distance < (cellA.size + cellB.size) / 2) {
-            // Prevent overlap by adjusting position only if distance is too close
+          // Calculate the required safe distance (maintain dynamic offset)
+          const safeDistance = largerRadius + smallerRadius + dynamicBuffer;
 
-            const overlap = (cellA.size + cellB.size) / 2 - distance;
-            const correction = overlap / 2;
+          // Check if cells can merge
+          if (distance < safeDistance) {
+            if (largerCell.canMerge() && smallerCell.canMerge()) {
+              // Merge logic
+              const newSize = Math.sqrt(
+                largerCell.size ** 2 + smallerCell.size ** 2
+              ); // Preserve area
+              largerCell.updateSize(newSize);
+              largerCell.lastMergeTime = Date.now(); // Update merge timestamp
 
-            // Normalize direction vector to separate the cells
-            const direction = { x: dx / distance, y: dy / distance };
+              this.cells.delete(smallerCell.id); // Remove merged cell
+            } else {
+              // If they cannot merge, maintain a safe distance
+              const overlap = safeDistance - distance;
 
-            // Push cellA and cellB apart by the correction distance
-            cellA.position.x -= direction.x * correction;
-            cellA.position.y -= direction.y * correction;
+              if (overlap > 0) {
+                const direction = { x: dx / distance, y: dy / distance };
 
-            cellB.position.x += direction.x * correction;
-            cellB.position.y += direction.y * correction;
+                // Push smaller cell outside the larger cell's radius
+                const pushDistance = overlap / 2;
+
+                smallerCell.position.x += direction.x * pushDistance;
+                smallerCell.position.y += direction.y * pushDistance;
+
+                largerCell.position.x -= direction.x * pushDistance;
+                largerCell.position.y -= direction.y * pushDistance;
+              }
+            }
           }
         }
       }
