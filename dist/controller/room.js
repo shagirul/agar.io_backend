@@ -1,7 +1,7 @@
 import Player from "../model/player.js";
 import AppleService from "../service/apple.js";
 import PlayerService from "../service/player.js";
-export default class GameManager {
+export default class Room {
     constructor() {
         this.players = [];
         this.apples = [];
@@ -68,4 +68,4 @@ export default class GameManager {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 }
-//# sourceMappingURL=gamemanager.js.map
+//# sourceMappingURL=room.js.map

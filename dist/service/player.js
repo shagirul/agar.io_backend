@@ -11,10 +11,17 @@ export default class PlayerService {
         this.players.set(player.getId(), player);
     }
     // Method to update a player's position
-    updatePlayerPosition(id, x, y) {
+    updatePlayerPosition(id, deltaTime) {
         const player = this.players.get(id);
         if (player) {
-            player.updatePosition(x, y);
+            player.move(deltaTime);
+        }
+    }
+    // Method to update a player's position
+    shoot(id, deltaTime) {
+        const player = this.players.get(id);
+        if (player) {
+            player.shoot();
         }
     }
     // Method to get all players
@@ -24,6 +31,7 @@ export default class PlayerService {
     // Method to remove a player (optional if needed)
     removePlayer(id) {
         this.players.delete(id);
+        console.log("player deleted", id);
     }
 }
 //# sourceMappingURL=player.js.map

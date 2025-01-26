@@ -3,7 +3,7 @@ import { config } from "dotenv";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import GameManager from "./controller/gamemanager.js";
+import Room from "./model/room.js";
 // Uncomment if you want request logging
 // import morgan from "morgan";
 // Load environment variables from .env file
@@ -15,6 +15,7 @@ var SocketEvent;
     SocketEvent["Connection"] = "connection";
     SocketEvent["PlayerCreated"] = "playerCreated";
     SocketEvent["CreatePlayer"] = "createPlayer";
+    SocketEvent["Attack"] = "attack";
     SocketEvent["UpdatePlayerPosition"] = "updatePlayerPosition";
     SocketEvent["GameState"] = "gameState";
     SocketEvent["PlayerDisconnected"] = "playerDisconnected";
@@ -32,36 +33,43 @@ const io = new Server(server, {
         credentials: true, // Allow cookies if necessary
     },
 });
-const gameManager = new GameManager();
+const RoomManger = new Room();
 // Initialize the game
-gameManager.initializeGame();
+RoomManger.initializeGame();
 io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
     // Create player when a new user connects
     socket.on(SocketEvent.CreatePlayer, (name) => {
         const playerId = socket.id; // Use socket.id as the player ID
-        const player = gameManager.addPlayer(playerId, name);
+        const player = RoomManger.addPlayer(playerId, name);
         // Emit the player data to the specific player (the one who connected)
         socket.emit(SocketEvent.PlayerCreated, player.getPlayerData());
         // Emit the current game state to the new player
-        socket.emit(SocketEvent.GameState, gameManager.getGameState());
+        socket.emit(SocketEvent.GameState, RoomManger.getGameState());
         // Broadcast the new game state to all players except the one who just joined
-        socket.broadcast.emit(SocketEvent.GameState, gameManager.getGameState());
+        socket.broadcast.emit(SocketEvent.GameState, RoomManger.getGameState());
     });
     // Handle player movement updates
-    socket.on(SocketEvent.UpdatePlayerPosition, (x, y) => {
-        gameManager.updatePlayerPosition(socket.id, x, y);
+    socket.on(SocketEvent.UpdatePlayerPosition, (direction) => {
+        RoomManger.updatePlayerPosition(socket.id, direction);
         // Broadcast updated game state to all clients
-        io.emit(SocketEvent.GameState, gameManager.getGameState());
+        io.emit(SocketEvent.GameState, RoomManger.getGameState());
+    });
+    socket.on(SocketEvent.Attack, () => {
+        // Optionally, remove player from game state
+        RoomManger.attack(socket.id);
+        // Notify all other players about the disconnection
+        // socket.broadcast.emit(SocketEvent.PlayerDisconnected, socket.id);
+        io.emit(SocketEvent.GameState, RoomManger.getGameState());
     });
     // Handle player disconnection
     socket.on(SocketEvent.PlayerDisconnected, () => {
         console.log("A user disconnected:", socket.id);
         // Optionally, remove player from game state
-        gameManager.removePlayer(socket.id);
+        RoomManger.removePlayer(socket.id);
         // Notify all other players about the disconnection
         // socket.broadcast.emit(SocketEvent.PlayerDisconnected, socket.id);
-        io.emit(SocketEvent.GameState, gameManager.getGameState());
+        io.emit(SocketEvent.GameState, RoomManger.getGameState());
     });
 });
 // Health check endpoint

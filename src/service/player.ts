@@ -1,4 +1,5 @@
 import Player from "../model/player.js";
+import { Vector2D } from "../utils/types.js";
 
 export default class PlayerService {
   private players: Map<string, Player> = new Map();
@@ -14,10 +15,17 @@ export default class PlayerService {
   }
 
   // Method to update a player's position
-  public updatePlayerPosition(id: string, x: number, y: number): void {
+  public updatePlayerPosition(id: string, deltaTime: number): void {
     const player = this.players.get(id);
     if (player) {
-      player.updatePosition(x, y);
+      player.move(deltaTime);
+    }
+  }
+  // Method to update a player's position
+  public shoot(id: string, deltaTime?: number): void {
+    const player = this.players.get(id);
+    if (player) {
+      player.shoot();
     }
   }
 
@@ -29,5 +37,6 @@ export default class PlayerService {
   // Method to remove a player (optional if needed)
   public removePlayer(id: string): void {
     this.players.delete(id);
+    console.log("player deleted", id);
   }
 }

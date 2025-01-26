@@ -12,7 +12,7 @@ export default class AppleService {
         const x = Math.random() * this.width; // Random position
         const y = Math.random() * this.height;
         const size = 2 + Math.random() * 4; // Random size between 2 and 6
-        return new Apple(x, y, size);
+        return new Apple({ x, y }, size);
     }
     // Generate initial apples and return the apples array
     generateInitialApples(count = 100) {

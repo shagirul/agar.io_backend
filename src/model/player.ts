@@ -1,20 +1,24 @@
+import { Vector2D } from "../utils/types.js";
 import Apple from "./apple.js";
+import { Cell } from "./cell.js";
 
 export default class Player {
   private id: string;
-  private x: number;
-  private y: number;
   private color: string;
-  private size: number;
   private name: string; // New name field
+  private cells: Map<string, Cell>;
+  private target: Vector2D | null = null;
 
   public getId(): string {
     return this.id;
   }
 
-  public get playerSize(): number {
-    return this.size;
+  public setTarget(newTarget: Vector2D): void {
+    this.target = newTarget;
   }
+  // public get playerSize(): number {
+  //   return this.size;
+  // }
 
   // Getter for the name
   public get playerName(): string {
@@ -22,57 +26,177 @@ export default class Player {
   }
 
   // Public getter for accessing the position of the player
-  public get position(): { x: number; y: number } {
-    return { x: this.x, y: this.y };
-  }
+  // public get position(): { x: number; y: number } {
+  //   return { x: this.x, y: this.y };
+  // }
 
   // Constructor to initialize the player
-  constructor(
-    id: string,
-    name: string, // Accepting name
-    x: number,
-    y: number,
-    color: string,
-    size: number = 10
-  ) {
+  constructor(id: string, name: string, color: string) {
     this.id = id;
-    this.name = name; // Initialize name
-    this.x = x;
-    this.y = y;
+    this.name = name;
     this.color = color;
-    this.size = size; // Default size
+    this.cells = new Map();
+    const randomPosition = {
+      x: Math.random() * Number(process.env.CANVASWIDTH || 1000),
+      y: Math.random() * Number(process.env.CANVASHEIGHT || 1000),
+    };
+    const cell = new Cell(`${id}-1`, randomPosition, 30, id);
+    this.addCell(cell);
   }
 
-  // Method to update player position
-  public updatePosition(x: number, y: number): void {
-    this.x = x;
-    this.y = y;
+  addCell(cell: Cell): void {
+    this.cells.set(cell.id, cell);
   }
 
-  // Method to increase the player's size based on the apple's size
-  public increaseSize(apple: Apple): void {
-    this.size += apple.appleSize * 0.5; // Increase player size based on apple size
+  removeCell(cellId: string): void {
+    this.cells.delete(cellId);
+  }
+  // Move the player (and its cells) towards the target
+  move(deltaTime: number): void {
+    if (this.target) {
+      const cellArray = Array.from(this.cells.values());
+
+      // Update positions of all cells
+      cellArray.forEach((cell) => {
+        cell.updatePosition(this.target!, deltaTime);
+      });
+
+      // Check for merging or repositioning conditions
+      for (let i = 0; i < cellArray.length; i++) {
+        for (let j = i + 1; j < cellArray.length; j++) {
+          const cellA = cellArray[i];
+          const cellB = cellArray[j];
+
+          // Ensure cellA is always the larger one for comparison
+          let largerCell = cellA;
+          let smallerCell = cellB;
+          if (cellB.size > cellA.size) {
+            largerCell = cellB;
+            smallerCell = cellA;
+          }
+
+          const dx = smallerCell.position.x - largerCell.position.x;
+          const dy = smallerCell.position.y - largerCell.position.y;
+          const distance = Math.sqrt(dx ** 2 + dy ** 2);
+
+          // Calculate radii
+          const largerRadius = largerCell.size / 2;
+          const smallerRadius = smallerCell.size / 2;
+
+          // Dynamically calculate the buffer based on the radii of both cells
+          const dynamicBuffer = Math.max(10, largerRadius + smallerRadius); // Dynamic buffer grows with size
+
+          // Calculate the required safe distance (maintain dynamic offset)
+          const safeDistance = largerRadius + smallerRadius + dynamicBuffer;
+
+          // Check if cells can merge
+          if (distance < safeDistance) {
+            if (largerCell.canMerge() && smallerCell.canMerge()) {
+              // Merge logic
+              const newSize = Math.sqrt(
+                largerCell.size ** 2 + smallerCell.size ** 2
+              ); // Preserve area
+              largerCell.updateSize(newSize);
+              largerCell.lastMergeTime = Date.now(); // Update merge timestamp
+
+              this.cells.delete(smallerCell.id); // Remove merged cell
+            } else {
+              // If they cannot merge, maintain a safe distance
+              const overlap = safeDistance - distance;
+
+              if (overlap > 0) {
+                const direction = { x: dx / distance, y: dy / distance };
+
+                // Push smaller cell outside the larger cell's radius
+                const pushDistance = overlap / 2;
+
+                smallerCell.position.x += direction.x * pushDistance;
+                smallerCell.position.y += direction.y * pushDistance;
+
+                largerCell.position.x -= direction.x * pushDistance;
+                largerCell.position.y -= direction.y * pushDistance;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
-  // Method to check for collision with an apple
-  public isCollidingWithApple(apple: Apple): boolean {
-    const distance = Math.sqrt(
-      Math.pow(this.x - apple.position.x, 2) +
-        Math.pow(this.y - apple.position.y, 2)
-    );
-    const collisionThreshold = this.size + apple.appleSize; // Combine player size and apple size
-    return distance < collisionThreshold; // Check if distance is smaller than the sum of the radii
+  shoot(): void {
+    if (!this.target) return;
+
+    const newCells: Cell[] = [];
+    this.cells.forEach((cell) => {
+      if (cell.size > 20) {
+        const newSize = cell.size / 2;
+        cell.updateSize(newSize);
+
+        const direction = {
+          x: this.target!.x - cell.position.x,
+          y: this.target!.y - cell.position.y,
+        };
+        const distance = Math.sqrt(direction.x ** 2 + direction.y ** 2);
+
+        if (distance === 0) return;
+
+        const normalized = {
+          x: direction.x / distance,
+          y: direction.y / distance,
+        };
+
+        const newCellPosition = {
+          x: cell.position.x + normalized.x * 100,
+          y: cell.position.y + normalized.y * 100,
+        };
+
+        const newCell = new Cell(
+          `${this.id}-${Math.random().toString(36).substr(2, 9)}`,
+          newCellPosition,
+          newSize,
+          this.id
+        );
+
+        // Adjust cooldown dynamically
+        newCell.splitCooldown = 30000 + (7 / 300) * newCell.size * 1000;
+
+        newCells.push(newCell);
+
+        cell.position.x -= normalized.x * 100;
+        cell.position.y -= normalized.y * 100;
+      }
+    });
+
+    newCells.forEach((newCell) => this.addCell(newCell));
+  }
+
+  public getCells(): Cell[] {
+    return Array.from(this.cells.values());
   }
 
   // Method to retrieve player data
   public getPlayerData() {
     return {
       id: this.id,
-      name: this.name, // Include name in player data
-      x: this.x,
-      y: this.y,
+      name: this.name,
       color: this.color,
-      size: this.size, // Include size in player data
+      cells: this.getCells().map((cell) => ({
+        id: cell.id,
+        position: cell.position,
+        size: cell.size,
+      })), // Return an array of plain objects representing the cells
+    };
+  }
+  public toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      color: this.color,
+      cells: this.getCells().map((cell) => ({
+        id: cell.id,
+        position: cell.getPosition(), // Assuming Cell class has getPosition method
+        size: cell.size, // Assuming Cell class has size property
+      })), // Map the cells to a serializable format
     };
   }
 }

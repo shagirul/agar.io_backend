@@ -1,17 +1,16 @@
 export default class Apple {
-  private x: number;
-  private y: number;
+  private position: { x: number; y: number };
+
   private size: number;
 
-  constructor(x: number, y: number, size: number) {
-    this.x = x;
-    this.y = y;
+  constructor(position: { x: number; y: number }, size: number) {
     this.size = size;
+    this.position = position;
   }
 
   // Getter for apple position
-  public get position(): { x: number; y: number } {
-    return { x: this.x, y: this.y };
+  public getPosition(): { x: number; y: number } {
+    return this.position;
   }
 
   // Getter for apple size
@@ -20,8 +19,7 @@ export default class Apple {
   }
 
   // Update apple's position
-  public updatePosition(x: number, y: number): void {
-    this.x = x;
-    this.y = y;
+  public updatePosition(position: { x: number; y: number }): void {
+    this.position = position;
   }
 }
