@@ -1,5 +1,6 @@
 # Enhancing Code with SOLID Principles
 
+
 ---
 
 ### **S - Single Responsibility Principle**
@@ -161,3 +162,4 @@ class GameLoop {
 ```
 
 ---
+
