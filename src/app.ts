@@ -30,7 +30,8 @@ const server = createServer(app);
 app.use(cors());
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "https://agar-roan.vercel.app"], // Allow connections from the client URL
+    origin: "*",
+    // origin: ["http://localhost:5173", "https://agar-roan.vercel.app"], // Allow connections from the client URL
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Allow cookies if necessary
