@@ -44,12 +44,32 @@ export default class Room {
     const deltaTime = (Date.now() - this.lastTime) / 1000; // Calculate time difference in seconds
     this.lastTime = Date.now(); // Update the lastTime to the current time
 
+    // // Update positions of all players in the room
+    // this.playerService.getAllPlayers().forEach((player: Player) => {
+    //   // Move each cell of the player
+    //   player.move(deltaTime); // Assume player.move() uses deltaTime for smooth movement
+    //   player.getCells().forEach((cell) => {
+    //     this.checkForAppleCollision(cell);
+    //   });
+    // });
     // Update positions of all players in the room
     this.playerService.getAllPlayers().forEach((player: Player) => {
       // Move each cell of the player
       player.move(deltaTime); // Assume player.move() uses deltaTime for smooth movement
       player.getCells().forEach((cell) => {
+        // Check for collisions with apples
         this.checkForAppleCollision(cell);
+
+        // Check for collisions with other players' cells
+        this.players.forEach((otherPlayer) => {
+          if (player !== otherPlayer) {
+            otherPlayer.getCells().forEach((otherCell) => {
+              if (this.checkCollision(cell, otherCell)) {
+                this.handleCollision(player, cell, otherPlayer, otherCell);
+              }
+            });
+          }
+        });
       });
     });
 
@@ -76,6 +96,47 @@ export default class Room {
     this.playerService.addPlayer(player);
 
     return player;
+  }
+
+  absorbCell(
+    // winnerPlayer: Player,
+    winnerCell: Cell,
+    loserPlayer: Player,
+    loserCellId: string
+  ) {
+    const loserCell = loserPlayer.getCellById(loserCellId);
+    // if (!loserCell) return;
+    if (!loserCell) {
+      console.warn(
+        `Cell with ID ${loserCellId} not found for player ${loserPlayer.getId()}`
+      );
+      return;
+    }
+
+    // Increase the winner's cell size
+    winnerCell.size += loserCell.size * 0.8;
+
+    // Remove the eaten cell
+    loserPlayer.removeCell(loserCellId);
+
+    // Remove the player if they have no more cells
+    if (loserPlayer.getCells().length === 0) {
+      this.removePlayer(loserPlayer.getId());
+    }
+  }
+  checkCollision(cellA: Cell, cellB: Cell): boolean {
+    const dx = cellA.position.x - cellB.position.x;
+    const dy = cellA.position.y - cellB.position.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return distance < (cellA.size + cellB.size) / 2;
+  }
+  handleCollision(playerA: Player, cellA: Cell, playerB: Player, cellB: Cell) {
+    if (cellA.size > cellB.size * 1.1) {
+      // Slight tolerance for fair collisions
+      this.absorbCell(cellA, playerB, cellB.id);
+    } else if (cellB.size > cellA.size * 1.1) {
+      this.absorbCell(cellB, playerA, cellA.id);
+    }
   }
 
   // Remove a player by ID
