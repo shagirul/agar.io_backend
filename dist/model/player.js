@@ -127,6 +127,9 @@ export default class Player {
         });
         newCells.forEach((newCell) => this.addCell(newCell));
     }
+    getCellById(cellId) {
+        return this.cells.get(cellId);
+    }
     getCells() {
         return Array.from(this.cells.values());
     }

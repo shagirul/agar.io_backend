@@ -169,6 +169,9 @@ export default class Player {
 
     newCells.forEach((newCell) => this.addCell(newCell));
   }
+  public getCellById(cellId: string): Cell | undefined {
+    return this.cells.get(cellId);
+  }
 
   public getCells(): Cell[] {
     return Array.from(this.cells.values());
